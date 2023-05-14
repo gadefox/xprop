@@ -182,26 +182,26 @@ Format_String (const char *s, int unicode)
         if ( c == '\0')
             break;
 
-        /* puts max 4 chars */
+        /* puts max 4 char(s) */
         switch ( c )
           {
             case '\\':
             case '\"':
                 Large_Buffer_Put_Char ('\\');
                 Large_Buffer_Put_Char (c);
-                /* 2 chars */
+                /* 2 char(s) */
                 break;
 
             case '\n':
                 Large_Buffer_Put_Char ('\\');
                 Large_Buffer_Put_Char ('n');
-                /* 2 chars */
+                /* 2 char(s) */
                 break;
 
             case '\t':
                 Large_Buffer_Put_Char ('\\');
                 Large_Buffer_Put_Char ('t');
-                /* 2 chars */
+                /* 2 char(s) */
                 break;
 
             default:
@@ -220,7 +220,7 @@ Format_String (const char *s, int unicode)
                 Large_Buffer_Put_Char ('\\');
                 snprintf (s_large_buffer, 4, "%03o", (unsigned char) c);
                 Large_Buffer_Offset (3);
-                /* 4 chars */
+                /* 4 char(s) */
                 break;
           }
 
@@ -242,7 +242,7 @@ int
 Print_Len_String (const char *s, int len, int unicode)
 {
     char *new_s;
-    int ret;
+    int ret = True;
 
     new_s = x_malloc ((len + 1) + sizeof (char));
     if ( new_s == NULL )
@@ -251,19 +251,30 @@ Print_Len_String (const char *s, int len, int unicode)
     memcpy (new_s, s, len * sizeof (char));
     new_s [len] = '\0';
 
-    ret = Format_String (new_s, unicode);
-    free (new_s);
-    if ( !ret )
-        return False;
+    if ( a_flags & FlagRaw ) {
+        Print (new_s, ColorValue);
+        goto quit;
+    }
 
-    /* verbose */
-    Print ((char *) xp_large_buffer.items, ColorValue);
-    return True;
+    ret = Format_String (new_s, unicode);
+    if ( ret ) {
+        /* verbose */
+        Print ((char *) xp_large_buffer.items, ColorValue);
+    }
+
+quit:
+    free (new_s);
+    return ret;
 }  
 
 int
 Print_String (const char *s, int unicode)
 {
+    if ( a_flags & FlagRaw ) {
+        Print (s, ColorValue);
+        return True; 
+    }
+
     if ( !Format_String (s, unicode) )
         return False;
 
@@ -605,7 +616,7 @@ Print_Property_Rec (PropertyRec *p, VerboseColor c)
     if ( (a_flags & FlagRaw) == 0 )
         verbose_s ("  format  = ");
 
-    if ( !Print_String (p->format, 0) )
+    if ( !Print_String (p->format, False) )
         return False;
 
     verbose_newline ();
@@ -615,7 +626,7 @@ Print_Property_Rec (PropertyRec *p, VerboseColor c)
         verbose_s ("  dformat = ");
 
     if ( p->dformat != NULL ) {
-        if ( !Print_String (p->dformat, 0) )
+        if ( !Print_String (p->dformat, False) )
             return False;
     } else if ( (a_flags & FlagRaw) == 0 )
         Print ("default", ColorUndefined);
