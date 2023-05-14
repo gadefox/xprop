@@ -685,6 +685,10 @@ Run (RunParams *rp)
 {
     char *env;
 
+    /* open display */
+    if ( !Display_Open (a_dispname) )
+        return EXIT_FAILURE;
+
     /* parse all arguments */
     if ( !Run_Params_Parse_Args (rp) )
         return EXIT_FAILURE;
@@ -693,10 +697,6 @@ Run (RunParams *rp)
         Print_Info ();
         return EXIT_SUCCESS;
     }
-
-    /* open display */
-    if ( !Display_Open (a_dispname) )
-        return EXIT_FAILURE;
 
     /* Set up default atom to format, dformat mapping */
     if ( a_fontname == NULL ) {
@@ -733,6 +733,9 @@ Run (RunParams *rp)
     /* set properties */
     if ( !Properties_Set (rp ) )
         return EXIT_FAILURE;
+
+    if ( rp->remove_props.items != NULL || rp->set_props.items != NULL )
+        return EXIT_SUCCESS;
 
     if ( !Handle_Prop_Requests (rp) )
         return EXIT_FAILURE;
